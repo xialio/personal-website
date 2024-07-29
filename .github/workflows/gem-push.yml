@@ -1,4 +1,4 @@
-name: Ruby Gem
+name: Build and Deploy
 
 on:
   push:
@@ -8,43 +8,39 @@ on:
 
 jobs:
   build:
-    name: Build and Publish
+    name: Build and Deploy
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Ruby
-      uses: ruby/setup-ruby@v1
+    # 如果你使用的是 Node.js 项目，可以添加设置 Node.js 和安装依赖的步骤
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
       with:
-        ruby-version: 2.6
+        node-version: '14'
+        
+    - name: Install dependencies
+      run: npm install
 
-    - name: Debug - List files
-      run: ls -la
+    - name: Build project
+      run: npm run build
 
-    - name: Build Gem
-      run: gem build *.gemspec
+    # 如果你使用的是 Jekyll 或 Hugo 等静态站点生成器，请使用相应的步骤
+    # - name: Set up Ruby for Jekyll
+    #   uses: ruby/setup-ruby@v1
+    #   with:
+    #     ruby-version: '2.7'
 
-    - name: Publish to GitHub Packages
-      env:
-        GEM_HOST_API_KEY: ${{ secrets.GITHUB_TOKEN }}
-        OWNER: ${{ github.repository_owner }}
-      run: |
-        mkdir -p $HOME/.gem
-        touch $HOME/.gem/credentials
-        chmod 0600 $HOME/.gem/credentials
-        printf -- "---\n:github: Bearer ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
-        gem push --key github --host https://rubygems.pkg.github.com/${OWNER} *.gem
+    # - name: Install Jekyll and dependencies
+    #   run: |
+    #     gem install bundler
+    #     bundle install
 
-    - name: Publish to RubyGems
-      env:
-        GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_AUTH_TOKEN }}
-      run: |
-        mkdir -p $HOME/.gem
-        touch $HOME/.gem/credentials
-        chmod 0600 $HOME/.gem/credentials
-        printf -- "---\n:rubygems_api_key: ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
-        gem push *.gem
+    # - name: Build Jekyll site
+    #   run: bundle exec jekyll build
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./public  # 根据你的项目
